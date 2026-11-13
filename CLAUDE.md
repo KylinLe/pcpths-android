@@ -85,6 +85,6 @@ adb 在 `~/Library/Android/sdk/platform-tools/adb`。
 
 ## 待办
 
-- [x] 发布：GitHub 仓库（KylinLe/pcpths-android）+ 签名 release APK v1.0.0（2026-11-13）
+- [x] 发布：GitHub 仓库（KylinLe/pcpths-android）+ 签名 release APK v1.0.0（2026-11-13）、v1.0.1 首页居中正式版（2026-11-14）
 - [ ] 官网「APP 下载」板块的安卓按钮指向本仓库下载链接——由官网智能体改，提示词已发给用户
 - [ ] 应用图标已用 logo/AppLogo.png 生成；若 logo 改版，需重新生成图标并升级版本
