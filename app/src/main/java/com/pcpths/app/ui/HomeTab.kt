@@ -8,11 +8,14 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -48,64 +51,77 @@ fun HomeTab(hero: HeroBlock, modifier: Modifier = Modifier) {
     val c = LocalAppColors.current
     val scrollState = rememberScrollState()
 
-    Column(
-        modifier
-            .fillMaxSize()
-            .verticalScroll(scrollState)
-            .padding(start = 24.dp, top = 24.dp, end = 24.dp, bottom = 36.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        // 社团 logo（相机图形，已裁切留白，随主题着色：浅色黑、深色白）
-        Image(
-            painter = painterResource(R.drawable.app_logo),
-            contentDescription = "普中摄影社",
-            colorFilter = ColorFilter.tint(c.ink),
-            modifier = Modifier.size(width = 104.dp, height = 75.dp)
-        )
-        Spacer(Modifier.height(20.dp))
-        if (hero.eyebrow.isNotBlank()) {
-            Text(
-                hero.eyebrow,
-                fontSize = 11.sp,
-                letterSpacing = 2.sp,
-                color = c.muted,
-                textAlign = TextAlign.Center
-            )
-            Spacer(Modifier.height(20.dp))
-        }
-        Text(
-            hero.title,
-            fontSize = 44.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 6.sp,
-            color = c.ink,
-            textAlign = TextAlign.Center
-        )
-        Spacer(Modifier.height(10.dp))
-        Text(
-            hero.en,
-            fontSize = 14.sp,
-            letterSpacing = 3.sp,
-            color = c.muted,
-            textAlign = TextAlign.Center
-        )
-        hero.desc?.let { desc ->
-            Spacer(Modifier.height(24.dp))
-            Text(
-                desc,
-                fontSize = 16.sp,
-                lineHeight = 28.sp,
-                color = c.ink,
-                textAlign = TextAlign.Center
-            )
-        }
-        Spacer(Modifier.height(44.dp))
-        ApertureGraphic(
+    // 整块内容在首页视口内上下左右居中；内容超出视口时仍可滚动。
+    // 注意：视口高度必须在滚动容器「外」测量——滚动容器给子内容的高度约束是无限大，
+    // 放在里面取 maxHeight 会得到 Infinity，居中失效。
+    BoxWithConstraints(modifier.fillMaxSize()) {
+        val viewportHeight = maxHeight
+        Column(
             Modifier
-                .fillMaxWidth(0.88f)
-                // 绘制阶段读取滚动值：只更新图形层，不触发整页重算
-                .graphicsLayer { rotationZ = minOf(scrollState.value * 0.06f, 36f) }
-        )
+                .fillMaxWidth()
+                .verticalScroll(scrollState)
+        ) {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = viewportHeight)
+                    .padding(horizontal = 24.dp, vertical = 36.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                // 社团 logo（相机图形，已裁切留白，随主题着色：浅色黑、深色白）
+                Image(
+                    painter = painterResource(R.drawable.app_logo),
+                    contentDescription = "普中摄影社",
+                    colorFilter = ColorFilter.tint(c.ink),
+                    modifier = Modifier.size(width = 104.dp, height = 75.dp)
+                )
+                Spacer(Modifier.height(20.dp))
+                if (hero.eyebrow.isNotBlank()) {
+                    Text(
+                        hero.eyebrow,
+                        fontSize = 11.sp,
+                        letterSpacing = 2.sp,
+                        color = c.muted,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(Modifier.height(20.dp))
+                }
+                Text(
+                    hero.title,
+                    fontSize = 44.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 6.sp,
+                    color = c.ink,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    hero.en,
+                    fontSize = 14.sp,
+                    letterSpacing = 3.sp,
+                    color = c.muted,
+                    textAlign = TextAlign.Center
+                )
+                hero.desc?.let { desc ->
+                    Spacer(Modifier.height(24.dp))
+                    Text(
+                        desc,
+                        fontSize = 16.sp,
+                        lineHeight = 28.sp,
+                        color = c.ink,
+                        textAlign = TextAlign.Center
+                    )
+                }
+                Spacer(Modifier.height(44.dp))
+                ApertureGraphic(
+                    Modifier
+                        .fillMaxWidth(0.88f)
+                        // 绘制阶段读取滚动值：只更新图形层，不触发整页重算
+                        .graphicsLayer { rotationZ = minOf(scrollState.value * 0.06f, 36f) }
+                )
+            }
+        }
     }
 }
 
