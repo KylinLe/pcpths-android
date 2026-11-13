@@ -41,7 +41,7 @@ object Parser {
                 eyebrow = h.selectFirst(".eyebrow")?.text().orEmpty(),
                 title = h.selectFirst("h1")?.text().orEmpty(),
                 en = h.selectFirst(".hero-en")?.text().orEmpty(),
-                desc = h.selectFirst(".hero-desc")?.let { textWithBreaks(it) }
+                desc = h.selectFirst(".hero-desc")?.let { normalizeIndent(textWithBreaks(it)) }
             )
         } ?: HeroBlock("", "", "", null)
 
@@ -66,7 +66,7 @@ object Parser {
                 eyebrow = h.selectFirst(".eyebrow")?.text().orEmpty(),
                 title = h.selectFirst("h1")?.text().orEmpty(),
                 en = h.selectFirst(".hero-en")?.text().orEmpty(),
-                desc = h.selectFirst(".hero-desc")?.let { textWithBreaks(it) }
+                desc = h.selectFirst(".hero-desc")?.let { normalizeIndent(textWithBreaks(it)) }
             )
         }
         val sections = doc.select("main > section.sec").map { parseSection(it) }
@@ -158,4 +158,8 @@ object Parser {
         clone.select("br").forEach { it.after("\n") }
         return clone.wholeText().trim()
     }
+
+    /** 去除每行首尾空白：官网正文有排版缩进（如「快门，是唯一的挽留」前的空格），居中显示前必须清除 */
+    private fun normalizeIndent(text: String): String =
+        text.lines().joinToString("\n") { it.trim() }
 }

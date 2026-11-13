@@ -52,17 +52,17 @@ fun HomeTab(hero: HeroBlock, modifier: Modifier = Modifier) {
         modifier
             .fillMaxSize()
             .verticalScroll(scrollState)
-            .padding(horizontal = 24.dp, vertical = 36.dp),
+            .padding(start = 24.dp, top = 24.dp, end = 24.dp, bottom = 36.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // 社团 logo（相机图形，随主题着色：浅色黑、深色白）
+        // 社团 logo（相机图形，已裁切留白，随主题着色：浅色黑、深色白）
         Image(
             painter = painterResource(R.drawable.app_logo),
             contentDescription = "普中摄影社",
             colorFilter = ColorFilter.tint(c.ink),
-            modifier = Modifier.size(120.dp)
+            modifier = Modifier.size(width = 104.dp, height = 75.dp)
         )
-        Spacer(Modifier.height(40.dp))
+        Spacer(Modifier.height(20.dp))
         if (hero.eyebrow.isNotBlank()) {
             Text(
                 hero.eyebrow,
