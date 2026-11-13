@@ -1,7 +1,16 @@
 # 普陀中学摄影社安卓 App（pcpths_Android_Dev）
 
-原生安卓 App。内容从官网（https://kylinle.github.io/pcpths/）同步并翻译成原生界面。
+原生安卓 App，应用名「普中摄影社」。内容从官网（https://kylinle.github.io/pcpths/）同步并翻译成原生界面。
 官网文件夹 `officialwebsite/` 是只读参考材料（自带 .git，不在此仓库管理）。
+
+## 发布信息
+
+- GitHub 仓库：**KylinLe/pcpths-android**（public，main 分支）
+- 正式版：GitHub Releases（v1.0.0 起），安装包固定名 `pcpths-android.apk`
+- 官方下载链接（永远指向最新版）：https://github.com/KylinLe/pcpths-android/releases/latest/download/pcpths-android.apk
+- **签名密钥**：`keystore/pcpths-release.jks`（密码在 `keystore.properties`，两者均已加入 .gitignore，**切勿删除/外泄**——丢失后无法再更新 App）。Java 17 的 PKCS12 密钥库不支持存储/密钥分开设密码，两者必须相同。
+- 应用图标：由 `logo/AppLogo.png`（相机图形设计稿）生成，脚本思路见图标生成历史；改 logo 后需重新生成 mipmap-*/ic_launcher*.png 全套。
+- 发布流程：改代码 → 构建 → `./gradlew :app:assembleRelease` → `gh release create vX.Y.Z app/build/outputs/apk/release/app-release.apk#pcpths-android.apk --repo KylinLe/pcpths-android`
 
 ## 与用户协作的方式（重要）
 
@@ -64,8 +73,11 @@ app/src/main/java/com/pcpths/app/
 ```bash
 export JAVA_HOME="$PWD/tooling/jdk-17.0.21+9/Contents/Home"
 tooling/gradle-8.12.1/bin/gradle :app:assembleDebug        # 出 APK：app/build/outputs/apk/debug/app-debug.apk
+tooling/gradle-8.12.1/bin/gradle :app:assembleRelease      # 正式版（签名见「发布信息」）
 tooling/gradle-8.12.1/bin/gradle :app:testDebugUnitTest   # 跑解析测试
 ```
+
+仓库已附 Gradle Wrapper（`./gradlew`，构建说明见 README）。
 
 模拟器（官方，Apple Silicon）：avd 名 pcpths；system-images;android-36;google_apis;arm64-v8a。
 启动：`~/Library/Android/sdk/emulator/emulator -avd pcpths -no-snapshot -no-audio`
@@ -73,4 +85,6 @@ adb 在 `~/Library/Android/sdk/platform-tools/adb`。
 
 ## 待办
 
-- [ ] 发布：GitHub 仓库 + 签名 release APK + 更新官网下载链接（步骤 7，等用户发话）
+- [x] 发布：GitHub 仓库（KylinLe/pcpths-android）+ 签名 release APK v1.0.0（2026-11-13）
+- [ ] 官网「APP 下载」板块的安卓按钮指向本仓库下载链接——由官网智能体改，提示词已发给用户
+- [ ] 应用图标已用 logo/AppLogo.png 生成；若 logo 改版，需重新生成图标并升级版本
