@@ -7,12 +7,14 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
@@ -22,17 +24,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.pcpths.app.R
 import com.pcpths.app.data.HeroBlock
 
 /**
- * 首页分区：首屏「留住光」+ 六边形光圈（按官网 SVG 原生重绘）
+ * 首页分区：居中式设计——顶部社团 logo，首屏「留住光」文字居中 + 六边形光圈（按官网 SVG 原生重绘）
  * 动画（性能版）：
  * - 光圈随滚动旋转：只在图形层更新，不触发页面重算（官网同款 min(scrollY*0.06, 36)）
  * - 深色模式呼吸光晕：只重绘画布，且仅深色模式才运行
@@ -46,14 +52,24 @@ fun HomeTab(hero: HeroBlock, modifier: Modifier = Modifier) {
         modifier
             .fillMaxSize()
             .verticalScroll(scrollState)
-            .padding(horizontal = 24.dp, vertical = 36.dp)
+            .padding(horizontal = 24.dp, vertical = 36.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // 社团 logo（相机图形，随主题着色：浅色黑、深色白）
+        Image(
+            painter = painterResource(R.drawable.app_logo),
+            contentDescription = "普中摄影社",
+            colorFilter = ColorFilter.tint(c.ink),
+            modifier = Modifier.size(120.dp)
+        )
+        Spacer(Modifier.height(40.dp))
         if (hero.eyebrow.isNotBlank()) {
             Text(
                 hero.eyebrow,
                 fontSize = 11.sp,
                 letterSpacing = 2.sp,
-                color = c.muted
+                color = c.muted,
+                textAlign = TextAlign.Center
             )
             Spacer(Modifier.height(20.dp))
         }
@@ -62,14 +78,16 @@ fun HomeTab(hero: HeroBlock, modifier: Modifier = Modifier) {
             fontSize = 44.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 6.sp,
-            color = c.ink
+            color = c.ink,
+            textAlign = TextAlign.Center
         )
         Spacer(Modifier.height(10.dp))
         Text(
             hero.en,
             fontSize = 14.sp,
             letterSpacing = 3.sp,
-            color = c.muted
+            color = c.muted,
+            textAlign = TextAlign.Center
         )
         hero.desc?.let { desc ->
             Spacer(Modifier.height(24.dp))
@@ -77,14 +95,14 @@ fun HomeTab(hero: HeroBlock, modifier: Modifier = Modifier) {
                 desc,
                 fontSize = 16.sp,
                 lineHeight = 28.sp,
-                color = c.ink
+                color = c.ink,
+                textAlign = TextAlign.Center
             )
         }
         Spacer(Modifier.height(44.dp))
         ApertureGraphic(
             Modifier
                 .fillMaxWidth(0.88f)
-                .align(Alignment.CenterHorizontally)
                 // 绘制阶段读取滚动值：只更新图形层，不触发整页重算
                 .graphicsLayer { rotationZ = minOf(scrollState.value * 0.06f, 36f) }
         )

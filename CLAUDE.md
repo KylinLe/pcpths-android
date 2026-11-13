@@ -49,7 +49,7 @@ app/src/main/java/com/pcpths/app/
     ├── Theme.kt               # 设计变量 C.*（与官网 CSS 变量一一对应：细线/黑白/字距）
     ├── App.kt                 # 主界面：通知条 + 分区内容 + 详情页 + 底栏
     ├── BottomBar.kt           # 底部胶囊底栏（LazyRow 可滑动 + 铃铛 + 刷新）
-    ├── HomeTab.kt             # 首页「留住光」+ 六边形光圈原生重绘(Canvas)
+    ├── HomeTab.kt             # 首页居中式设计：社团 logo + 「留住光」+ 六边形光圈原生重绘(Canvas)
     ├── SectionTab.kt          # 栏目分区渲染（列表/课程卡片/岗位表→卡片堆叠）
     ├── DetailPage.kt          # 计划说明页（顶部返回按钮）
     └── NoticeStrip.kt         # 黑底通知条
