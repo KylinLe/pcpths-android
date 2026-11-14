@@ -46,6 +46,7 @@ app/src/main/java/com/pcpths/app/
 │   ├── Model.kt               # 内容数据模型（栏目/块/通知/说明页）
 │   ├── Parser.kt              # 官网 HTML → 原生数据（Jsoup，只认官网既有组件）
 │   ├── SiteSync.kt            # 同步器：启动/刷新时抓取官网整站小页面到 filesDir/site/
+│   ├── UpdateDownloader.kt    # 更新包下载器：官网 downloads APK → filesDir/update/ → FileProvider 安装
 │   └── AppRepository.kt       # 状态中枢：缓存加载、同步、通知关闭记忆(SharedPreferences)
 └── ui/
     ├── Theme.kt               # 设计变量 C.*（与官网 CSS 变量一一对应：细线/黑白/字距）
@@ -87,7 +88,7 @@ adb 在 `~/Library/Android/sdk/platform-tools/adb`。
 
 ## 待办
 
-- [x] 发布：GitHub 仓库（KylinLe/pcpths-android）+ 签名 release APK v1.0.0（2026-11-13）、v1.0.1 首页居中正式版（2026-11-14）、v1.0.2 左右滑动切换正式版（2026-11-14）
+- [x] 发布：GitHub 仓库（KylinLe/pcpths-android）+ 签名 release APK v1.0.0（2026-11-13）、v1.0.1 首页居中正式版（2026-11-14）、v1.0.2 左右滑动+自动更新检测版（2026-11-14 重发，versionCode 4，版本名不变）
 - [x] 官网「APP 下载」板块的安卓按钮：因国内 GitHub 访问问题，改为官网本站 downloads 文件夹托管 APK（2026-11-14，由官网智能体执行）
 - [ ] 应用图标已用 logo/AppLogo.png 生成；若 logo 改版，需重新生成图标并升级版本
-- [ ] App 端自动更新检测（校对官网 meta 版本号 → 下载安装官网 APK）——等官网智能体加好 meta 标签后实现，用户会提醒
+- [x] App 端自动更新检测：同步后校对官网 meta 版本号（versionCode 整数比较）→ 大于本机则弹窗（每会话一次）→ OkHttp 下载官网 APK 到 filesDir/update/ → FileProvider 交给系统安装器。需 REQUEST_INSTALL_PACKAGES 权限（已加）；首次更新会走一次系统「允许安装未知应用」授权页。下载失败走 snackbar 提示。
