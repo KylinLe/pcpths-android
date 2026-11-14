@@ -28,6 +28,7 @@
 4. 内容跟随官网：每次启动同步一次 → 之后全部走本地缓存；手动点刷新或重启才重新联网。官网新增栏目/通知/计划说明页自动适配。
 5. 不展示官网的「APP 下载」板块和「上课平台」入口。
 6. 术语：plan/ 下的页面是"计划说明页"，不是"文章"。
+6b. 长按底栏铃铛 → 弹窗显示版本号（versionName）与内部代号（versionCode）。
 7. 与官网 AI 的联动约定已发给用户（官网新组件类型须报告用户 → 转告本 App 升级）。
 
 ## 技术栈
@@ -62,7 +63,7 @@ app/src/main/java/com/pcpths/app/
 
 - 设计沿用官网规范：1dp 浅灰细线分隔；纯黑仅三处强调（列表顶部起始线、按钮描边、胶囊选中态）；颜色用 LocalAppColors 令牌；字距强调。
 - 深色模式（跟随系统，isSystemInDarkTheme）：官网黑白系统的"反相"——黑底白字、通知条白底黑字、强调线变白、胶囊选中态白色；首页光圈带呼吸光晕（Theme.kt 两套 AppColors）。values-night/themes.xml 控制状态栏深色。
-- 动画语言（官网同款缓动 SiteEase = cubic-bezier(.22,.61,.24,1)）：首页光圈随滚动旋转 min(px*0.06,36°)（官网对焦感）；通知条滑入/退出 + 铃铛重播（replayKey）；分区切换左右滑动（HorizontalPager，手势与底栏双向同步）；详情页右滑入/滑出（覆盖层，打开时禁止底层滑动，返回后页面状态保留）；分区条目依次浮现（Reveal，前 8 条错峰）。
+- 动画语言（官网同款缓动 SiteEase = cubic-bezier(.22,.61,.24,1)）：首页光圈随滚动旋转 min(px*0.06,36°)（官网对焦感）；通知条滑入/退出 + 铃铛重播（replayKey）；分区切换左右滑动（HorizontalPager，手势与底栏双向同步）；详情页开合为翻页动画（整页从右侧翻入/翻出，纯滑动无淡入淡出，打开时禁止底层滑动，返回后页面状态保留）。分区条目无浮现动画（2026-11-14 用户要求删除上浮动画，即时显示）。
 - 下载板块的排除方式：按内容判断（栏目内含 .dl-opts/.dl-btn 即跳过），不依赖 id。
 - 底栏标签名：优先官网导航链接文字，缺省用栏目 h2 文字。
 - 通知点击规则（App.kt handleNoticeTap）：锚点指向 App 内栏目 → 切标签；指向 App 不展示的栏目（如 #app 下载板块）→ 默认浏览器打开官网对应位置；站内页面 → App 内打开；外部链接 → 浏览器。
@@ -88,7 +89,7 @@ adb 在 `~/Library/Android/sdk/platform-tools/adb`。
 
 ## 待办
 
-- [x] 发布：GitHub 仓库（KylinLe/pcpths-android）+ 签名 release APK v1.0.0（2026-11-13）、v1.0.1 首页居中正式版（2026-11-14）、v1.0.2 左右滑动+自动更新检测版（2026-11-14 重发，versionCode 4，版本名不变）
+- [x] 发布：GitHub 仓库（KylinLe/pcpths-android）+ 签名 release APK v1.0.0（2026-11-13）、v1.0.1 首页居中正式版（2026-11-14）、v1.0.2 左右滑动+自动更新检测版（2026-11-14 重发，versionCode 4，版本名不变）、v1.0.3 去上浮动画+翻页详情+长按铃铛看版本（2026-11-14，versionCode 5）
 - [x] 官网「APP 下载」板块的安卓按钮：因国内 GitHub 访问问题，改为官网本站 downloads 文件夹托管 APK（2026-11-14，由官网智能体执行）
 - [ ] 应用图标已用 logo/AppLogo.png 生成；若 logo 改版，需重新生成图标并升级版本
 - [x] App 端自动更新检测：同步后校对官网 meta 版本号（versionCode 整数比较）→ 大于本机则弹窗（每会话一次）→ OkHttp 下载官网 APK 到 filesDir/update/ → FileProvider 交给系统安装器。需 REQUEST_INSTALL_PACKAGES 权限（已加）；首次更新会走一次系统「允许安装未知应用」授权页。下载失败走 snackbar 提示。

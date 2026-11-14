@@ -94,7 +94,7 @@ fun DetailPage(page: ParsedPage, onBack: () -> Unit, modifier: Modifier = Modifi
             }
             page.sections.forEach { section ->
                 // 详情页整体已有推入动画，内容不再叠加浮现动画
-                SectionTabContent(section, onItemTap = {}, animateItems = false)
+                SectionTabContent(section, onItemTap = {})
             }
         }
     }

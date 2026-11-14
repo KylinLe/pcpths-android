@@ -5,9 +5,9 @@ import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
@@ -202,18 +202,16 @@ fun App(vm: AppViewModel) {
                                 onOpenDetail = openDetail
                             )
 
-                            // 详情页：更深层级，从右侧滑入/滑出覆盖在上方；返回时页面状态原地保留
+                            // 详情页：翻页动画——整页从右侧翻入，返回时翻出（纯滑动，无淡入淡出）
                             AnimatedContent(
                                 targetState = detailPath != null,
                                 transitionSpec = {
                                     if (targetState) {
-                                        (slideInHorizontally(tween(280, easing = SiteEase)) { it / 3 } +
-                                                fadeIn(tween(220, easing = SiteEase))) togetherWith
-                                                fadeOut(tween(180))
+                                        slideInHorizontally(tween(280, easing = SiteEase)) { it } togetherWith
+                                            ExitTransition.None
                                     } else {
-                                        fadeIn(tween(180)) togetherWith
-                                                (slideOutHorizontally(tween(280, easing = SiteEase)) { it / 3 } +
-                                                        fadeOut(tween(220, easing = SiteEase)))
+                                        EnterTransition.None togetherWith
+                                            slideOutHorizontally(tween(280, easing = SiteEase)) { it }
                                     }
                                 },
                                 modifier = Modifier.fillMaxSize(),

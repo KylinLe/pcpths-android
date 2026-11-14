@@ -7,8 +7,10 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
@@ -21,18 +23,24 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -44,6 +52,7 @@ import com.pcpths.app.data.TabInfo
  * - 右端固定铃铛（重新显示已关闭的通知）和刷新（同步时图标旋转）
  * - 深色模式：选中态反相为白色胶囊
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun BottomCapsuleBar(
     tabs: List<TabInfo>,
@@ -56,6 +65,47 @@ fun BottomCapsuleBar(
     modifier: Modifier = Modifier
 ) {
     val c = LocalAppColors.current
+
+    // 长按铃铛 → 版本信息弹窗
+    var showVersion by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val (versionName, versionCode) = remember {
+        @Suppress("DEPRECATION")
+        val pi = context.packageManager.getPackageInfo(context.packageName, 0)
+        (pi.versionName ?: "?") to pi.versionCode
+    }
+
+    if (showVersion) {
+        AlertDialog(
+            onDismissRequest = { showVersion = false },
+            containerColor = c.paper,
+            titleContentColor = c.ink,
+            textContentColor = c.ink,
+            title = {
+                Text("普中摄影社", fontSize = 17.sp, fontWeight = FontWeight.Medium, letterSpacing = 1.sp)
+            },
+            text = {
+                Text(
+                    "版本：$versionName\n内部代号：$versionCode",
+                    fontSize = 14.sp,
+                    lineHeight = 24.sp,
+                    letterSpacing = 0.5.sp
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { showVersion = false }) {
+                    Text(
+                        "知道了",
+                        color = c.emphasis,
+                        fontSize = 14.sp,
+                        letterSpacing = 1.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            },
+            dismissButton = @Composable {}
+        )
+    }
     Surface(
         modifier,
         shape = RoundedCornerShape(percent = 50),
@@ -96,12 +146,21 @@ fun BottomCapsuleBar(
                     .background(c.line)
             )
 
-            // 铃铛：有已关闭的通知时显示小圆点
-            IconButton(onClick = onBell) {
+            // 铃铛：点击重新显示已关闭的通知；长按弹出版本信息（版本号 + 内部代号）
+            Box(
+                Modifier
+                    .clip(RoundedCornerShape(50))
+                    .combinedClickable(
+                        onClick = onBell,
+                        onLongClick = { showVersion = true }
+                    )
+                    .size(40.dp),
+                contentAlignment = Alignment.Center
+            ) {
                 Box {
                     Icon(
                         Icons.Filled.Notifications,
-                        contentDescription = "重新显示通知",
+                        contentDescription = "重新显示通知（长按查看版本）",
                         tint = c.ink,
                         modifier = Modifier.size(20.dp)
                     )
