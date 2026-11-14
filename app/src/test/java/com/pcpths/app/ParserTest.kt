@@ -22,6 +22,15 @@ class ParserTest {
     }
 
     @Test
+    fun `官网版本代号读取正确`() {
+        assertEquals(3, Parser.appVersionCode(fixture("index.html")))
+        // 缺失 / 非法时返回 null，不触发更新
+        assertNull(Parser.appVersionCode("<html><head></head><body></body></html>"))
+        assertNull(Parser.appVersionCode("<meta name=\"app-version-code\" content=\"abc\">"))
+        assertNull(Parser.appVersionCode("<meta name=\"app-version-code\">"))
+    }
+
+    @Test
     fun `下载板块被排除`() {
         val c = Parser.parseHome(fixture("index.html"))
         assertNull(c.tabs.find { it.id == "app" })

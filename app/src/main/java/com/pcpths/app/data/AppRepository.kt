@@ -20,7 +20,12 @@ class AppRepository(context: Context) {
         val syncing: Boolean = false,
         val offline: Boolean = false,
         val message: String? = null,
-        val dismissedNotices: Set<String> = emptySet()
+        val dismissedNotices: Set<String> = emptySet(),
+        /** 官网 meta 里藏的最新版本代号（同步后更新；null = 官网未配置或未同步成功） */
+        val siteVersionCode: Int? = null,
+        val updateDownloading: Boolean = false,
+        val updateProgress: Int? = null,
+        val updateApkReady: Boolean = false
     )
 
     private val appContext = context.applicationContext
@@ -42,7 +47,12 @@ class AppRepository(context: Context) {
         scope.launch {
             val html = SiteSync.loadCache(cacheDir)
             if (html != null) {
-                _state.update { it.copy(content = Parser.parseHome(html)) }
+                _state.update {
+                    it.copy(
+                        content = Parser.parseHome(html),
+                        siteVersionCode = Parser.appVersionCode(html)
+                    )
+                }
             }
             syncInternal(manual = false)
         }
@@ -61,11 +71,40 @@ class AppRepository(context: Context) {
         _state.update {
             it.copy(
                 content = html?.let { h -> Parser.parseHome(h) },
+                siteVersionCode = html?.let { h -> Parser.appVersionCode(h) },
                 syncing = false,
                 offline = !outcome.ok,
                 message = if (manual) outcome.message else null
             )
         }
+    }
+
+    /** 下载官网最新 APK（自动更新）；完成后 updateApkReady = true，失败走 message */
+    fun downloadUpdate() {
+        if (_state.value.updateDownloading) return
+        scope.launch {
+            _state.update { it.copy(updateDownloading = true, updateProgress = 0) }
+            try {
+                UpdateDownloader.download(appContext) { pct ->
+                    _state.update { it.copy(updateProgress = pct) }
+                }
+                _state.update {
+                    it.copy(updateDownloading = false, updateProgress = 100, updateApkReady = true)
+                }
+            } catch (e: Exception) {
+                _state.update {
+                    it.copy(
+                        updateDownloading = false,
+                        updateProgress = null,
+                        message = "更新包下载失败，请检查网络后重试"
+                    )
+                }
+            }
+        }
+    }
+
+    fun consumeUpdateReady() {
+        _state.update { it.copy(updateApkReady = false) }
     }
 
     fun dismissNotice(id: String) {

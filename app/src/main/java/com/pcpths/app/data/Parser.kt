@@ -162,4 +162,12 @@ object Parser {
     /** 去除每行首尾空白：官网正文有排版缩进（如「快门，是唯一的挽留」前的空格），居中显示前必须清除 */
     private fun normalizeIndent(text: String): String =
         text.lines().joinToString("\n") { it.trim() }
+
+    /**
+     * 官网 index.html 里藏的 App 版本代号（自动更新检测用）。
+     * 格式：<meta name="app-version-code" content="N">；缺失或非法返回 null。
+     */
+    fun appVersionCode(html: String): Int? =
+        Jsoup.parse(html).selectFirst("meta[name=app-version-code]")
+            ?.attr("content")?.trim()?.toIntOrNull()
 }

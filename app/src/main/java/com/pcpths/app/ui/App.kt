@@ -28,17 +28,20 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -53,6 +56,7 @@ import com.pcpths.app.data.Notice
 import com.pcpths.app.data.ParsedPage
 import com.pcpths.app.data.SiteContent
 import com.pcpths.app.data.SiteSync
+import com.pcpths.app.data.UpdateDownloader
 import kotlinx.coroutines.launch
 
 @Composable
@@ -63,9 +67,18 @@ fun App(vm: AppViewModel) {
         var detailPath by rememberSaveable { mutableStateOf<String?>(null) }
         var returnTab by rememberSaveable { mutableIntStateOf(0) }
         var bellPulse by rememberSaveable { mutableIntStateOf(0) }
-        val snackbarHostState = androidx.compose.runtime.remember { SnackbarHostState() }
+        val snackbarHostState = remember { SnackbarHostState() }
         val context = androidx.compose.ui.platform.LocalContext.current
         val c = LocalAppColors.current
+
+        // 自动更新检测：官网 meta 版本代号 > 本机 versionCode → 弹窗询问（每次同步后校对一次，本会话只问一次）
+        var updateDialogVisible by rememberSaveable { mutableStateOf(false) }
+        var updatePromptShown by rememberSaveable { mutableStateOf(false) }
+        var wasDownloading by remember { mutableStateOf(false) }
+        val localVersionCode = remember {
+            @Suppress("DEPRECATION")
+            context.packageManager.getPackageInfo(context.packageName, 0).versionCode
+        }
 
         val detailPage by produceState<ParsedPage?>(initialValue = null, detailPath) {
             value = detailPath?.let { vm.parsePage(it) }
@@ -87,6 +100,43 @@ fun App(vm: AppViewModel) {
             state.message?.let {
                 snackbarHostState.showSnackbar(it)
                 vm.consumeMessage()
+            }
+        }
+
+        // 版本校对：官网代号大于本机 → 询问更新
+        LaunchedEffect(state.siteVersionCode) {
+            val site = state.siteVersionCode ?: 0
+            if (site > localVersionCode && !updatePromptShown) {
+                updatePromptShown = true
+                updateDialogVisible = true
+            }
+        }
+
+        // 下载完成 → 交给系统安装器
+        // 注意：consumeUpdateReady 会改变本效果的触发条件，必须放在最后调用，
+        // 否则效果被自身取消，startActivity 永远执行不到
+        LaunchedEffect(state.updateApkReady) {
+            if (state.updateApkReady) {
+                updateDialogVisible = false
+                val file = UpdateDownloader.apkFile(context)
+                if (file.exists()) {
+                    try {
+                        context.startActivity(UpdateDownloader.installIntent(context, file))
+                    } catch (e: Exception) {
+                        // 设备上没有安装器时静默
+                    }
+                }
+                vm.consumeUpdateReady()
+            }
+        }
+
+        // 下载结束但未就绪 = 失败 → 关闭弹窗（错误提示由 snackbar 呈现）
+        LaunchedEffect(state.updateDownloading) {
+            if (state.updateDownloading) {
+                wasDownloading = true
+            } else if (wasDownloading) {
+                wasDownloading = false
+                if (!state.updateApkReady) updateDialogVisible = false
             }
         }
 
@@ -202,7 +252,73 @@ fun App(vm: AppViewModel) {
                 }
             }
         }
+
+        // 更新弹窗：询问 / 下载进度
+        if (updateDialogVisible) {
+            if (state.updateDownloading) {
+                UpdateDialog(
+                    title = "正在下载更新",
+                    text = "正在下载新版本… ${state.updateProgress ?: 0}%",
+                    onDismiss = null,
+                    confirmText = null
+                )
+            } else {
+                UpdateDialog(
+                    title = "发现新版本",
+                    text = "官网已发布新版本，是否立即更新？",
+                    onDismiss = { updateDialogVisible = false },
+                    confirmText = "更新",
+                    onConfirm = { vm.downloadUpdate() }
+                )
+            }
+        }
     }
+}
+
+/** 更新弹窗（黑白风格：纸色底、墨色字、强调色按钮） */
+@Composable
+private fun UpdateDialog(
+    title: String,
+    text: String,
+    onDismiss: (() -> Unit)?,
+    confirmText: String?,
+    onConfirm: (() -> Unit)? = null
+) {
+    val c = LocalAppColors.current
+    val dismissBtn: (@Composable () -> Unit)? = if (onDismiss != null) {
+        {
+            TextButton(onClick = onDismiss) {
+                Text("暂不", color = c.muted, fontSize = 14.sp, letterSpacing = 1.sp)
+            }
+        }
+    } else null
+    val confirmBtn: (@Composable () -> Unit)? = if (confirmText != null && onConfirm != null) {
+        {
+            TextButton(onClick = onConfirm) {
+                Text(
+                    confirmText,
+                    color = c.emphasis,
+                    fontSize = 14.sp,
+                    letterSpacing = 1.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }
+    } else null
+    AlertDialog(
+        onDismissRequest = { onDismiss?.invoke() },
+        containerColor = c.paper,
+        titleContentColor = c.ink,
+        textContentColor = c.ink,
+        title = {
+            Text(title, fontSize = 17.sp, fontWeight = FontWeight.Medium, letterSpacing = 1.sp)
+        },
+        text = {
+            Text(text, fontSize = 14.sp, lineHeight = 22.sp, letterSpacing = 0.5.sp)
+        },
+        dismissButton = dismissBtn ?: @Composable {},
+        confirmButton = confirmBtn ?: @Composable {}
+    )
 }
 
 @Composable

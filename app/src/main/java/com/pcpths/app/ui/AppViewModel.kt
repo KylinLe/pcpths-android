@@ -20,4 +20,6 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun reshowNotices() = repo.reshowNotices()
     fun consumeMessage() = repo.consumeMessage()
     suspend fun parsePage(path: String): ParsedPage? = repo.parsePage(path)
+    fun downloadUpdate() = repo.downloadUpdate()
+    fun consumeUpdateReady() = repo.consumeUpdateReady()
 }
