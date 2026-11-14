@@ -29,7 +29,7 @@ import com.pcpths.app.data.ParsedPage
 @Composable
 fun DetailPage(page: ParsedPage, onBack: () -> Unit, modifier: Modifier = Modifier) {
     val c = LocalAppColors.current
-    Column(modifier.fillMaxSize()) {
+    Column(modifier.fillMaxSize().background(c.paper)) {
         // 顶栏：返回 + 标题
         Row(
             Modifier

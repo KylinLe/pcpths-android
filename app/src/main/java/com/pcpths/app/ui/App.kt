@@ -9,7 +9,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
@@ -25,6 +24,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
@@ -37,8 +39,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -49,6 +53,7 @@ import com.pcpths.app.data.Notice
 import com.pcpths.app.data.ParsedPage
 import com.pcpths.app.data.SiteContent
 import com.pcpths.app.data.SiteSync
+import kotlinx.coroutines.launch
 
 @Composable
 fun App(vm: AppViewModel) {
@@ -99,6 +104,26 @@ fun App(vm: AppViewModel) {
                     content == null && state.syncing -> LoadingScreen()
                     content == null -> ErrorScreen { vm.refresh() }
                     else -> {
+                        val pageCount = content.tabs.size + 1
+                        val pagerState = rememberPagerState(
+                            initialPage = selectedTab.coerceIn(0, pageCount - 1)
+                        ) { pageCount }
+                        val scope = rememberCoroutineScope()
+
+                        // 手势左右滑动 → 底栏选中跟随
+                        LaunchedEffect(pagerState) {
+                            snapshotFlow { pagerState.currentPage }.collect { page ->
+                                selectedTab = page.coerceIn(0, pageCount - 1)
+                            }
+                        }
+
+                        // 统一切标签入口：底栏点击、通知跳转都走这里（详情返回时页面本就停在来源分区，无需滚动）
+                        val selectTab: (Int) -> Unit = { index ->
+                            detailPath = null
+                            selectedTab = index
+                            scope.launch { pagerState.animateScrollToPage(index) }
+                        }
+
                         val visibleNotices =
                             content.notices.filter { it.id !in state.dismissedNotices }
                         NoticeStrip(
@@ -110,7 +135,7 @@ fun App(vm: AppViewModel) {
                                     notice = n,
                                     content = content,
                                     context = context,
-                                    selectTab = { selectedTab = it },
+                                    selectTab = selectTab,
                                     openDetail = openDetail
                                 )
                             },
@@ -118,59 +143,50 @@ fun App(vm: AppViewModel) {
                         )
                         if (state.offline) OfflineBanner()
 
-                        // 内容区：分区切换交叉淡入淡出；详情页从右侧滑入/滑出
-                        AnimatedContent(
-                            targetState = selectedTab to (detailPath != null),
-                            transitionSpec = {
-                                val openingDetail = targetState.second && !initialState.second
-                                val closingDetail = initialState.second && !targetState.second
-                                when {
-                                    // 层级进入：整页右滑推入（内容本身无额外动画，保持单层动效）
-                                    openingDetail ->
+                        Box(Modifier.weight(1f)) {
+                            // 首页同级页面：左右滑动切换（第 0 页首页，其余按底栏顺序对应栏目）
+                            MainTabs(
+                                content = content,
+                                pagerState = pagerState,
+                                userScrollEnabled = detailPath == null,
+                                onOpenDetail = openDetail
+                            )
+
+                            // 详情页：更深层级，从右侧滑入/滑出覆盖在上方；返回时页面状态原地保留
+                            AnimatedContent(
+                                targetState = detailPath != null,
+                                transitionSpec = {
+                                    if (targetState) {
                                         (slideInHorizontally(tween(280, easing = SiteEase)) { it / 3 } +
                                                 fadeIn(tween(220, easing = SiteEase))) togetherWith
-                                                (slideOutHorizontally(tween(220, easing = SiteEase)) { -it / 5 } +
-                                                        fadeOut(tween(180)))
-                                    // 层级返回：反向滑出
-                                    closingDetail ->
-                                        (slideInHorizontally(tween(220, easing = SiteEase)) { -it / 5 } +
-                                                fadeIn(tween(180))) togetherWith
+                                                fadeOut(tween(180))
+                                    } else {
+                                        fadeIn(tween(180)) togetherWith
                                                 (slideOutHorizontally(tween(280, easing = SiteEase)) { it / 3 } +
                                                         fadeOut(tween(220, easing = SiteEase)))
-                                    // 同级切换（分区）：轻淡入 + 微微上浮
-                                    else ->
-                                        (fadeIn(tween(180, easing = SiteEase)) +
-                                                slideInVertically(tween(200, easing = SiteEase)) { it / 28 }) togetherWith
-                                                (fadeOut(tween(140)))
+                                    }
+                                },
+                                modifier = Modifier.fillMaxSize(),
+                                label = "detail"
+                            ) { isDetail ->
+                                if (isDetail) {
+                                    val page = detailPage
+                                    if (page != null) {
+                                        DetailPage(page, onBack = {
+                                            detailPath = null
+                                            selectedTab = returnTab
+                                        })
+                                    } else {
+                                        LoadingScreen()
+                                    }
                                 }
-                            },
-                            modifier = Modifier.weight(1f),
-                            label = "main"
-                        ) { (tab, isDetail) ->
-                            if (isDetail) {
-                                val page = detailPage
-                                if (page != null) {
-                                    DetailPage(page, onBack = {
-                                        detailPath = null
-                                        selectedTab = returnTab
-                                    })
-                                } else {
-                                    LoadingScreen()
-                                }
-                            } else {
-                                MainTabs(
-                                    content,
-                                    tab,
-                                    onSelectTab = { detailPath = null; selectedTab = it },
-                                    onOpenDetail = openDetail
-                                )
                             }
                         }
 
                         BottomCapsuleBar(
                             tabs = content.tabs,
                             selectedIndex = selectedTab,
-                            onSelect = { detailPath = null; selectedTab = it },
+                            onSelect = selectTab,
                             hasHiddenNotices = content.notices.any { it.id in state.dismissedNotices },
                             onBell = {
                                 vm.reshowNotices()
@@ -192,20 +208,23 @@ fun App(vm: AppViewModel) {
 @Composable
 private fun MainTabs(
     content: SiteContent,
-    selectedTab: Int,
-    onSelectTab: (Int) -> Unit,
+    pagerState: PagerState,
+    userScrollEnabled: Boolean,
     onOpenDetail: (String) -> Unit
 ) {
-    Box(Modifier.fillMaxSize()) {
-        when (selectedTab) {
-            0 -> HomeTab(content.homeHero)
-            else -> {
-                val section = content.sections.getOrNull(selectedTab - 1)
-                if (section != null) {
-                    SectionTab(section, onItemTap = onOpenDetail)
-                } else {
-                    HomeTab(content.homeHero)
-                }
+    HorizontalPager(
+        state = pagerState,
+        userScrollEnabled = userScrollEnabled,
+        modifier = Modifier.fillMaxSize()
+    ) { page ->
+        if (page == 0) {
+            HomeTab(content.homeHero)
+        } else {
+            val section = content.sections.getOrNull(page - 1)
+            if (section != null) {
+                SectionTab(section, onItemTap = onOpenDetail)
+            } else {
+                HomeTab(content.homeHero)
             }
         }
     }
@@ -258,7 +277,9 @@ private fun openInBrowser(context: Context, url: String) {
 private fun LoadingScreen() {
     val c = LocalAppColors.current
     Column(
-        Modifier.fillMaxSize(),
+        Modifier
+            .fillMaxSize()
+            .background(c.paper),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
