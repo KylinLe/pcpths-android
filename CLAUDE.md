@@ -8,10 +8,11 @@
 - GitHub 仓库：**KylinLe/pcpths-android**（public，main 分支）
 - 正式版：GitHub Releases（v1.0.0 起），安装包固定名 `pcpths-android.apk`
 - 官方下载链接（永远指向最新版）：https://github.com/KylinLe/pcpths-android/releases/latest/download/pcpths-android.apk
-- **国内下载**：因国内 github.com 访问不稳，官网「APP 下载」板块走官网本站 downloads 文件夹（2026-11-14 起）。每次发布新版后，需提醒用户让官网智能体同步更新官网 downloads 文件夹里的 APK。
+- **国内下载**：因国内 github.com 访问不稳，官网「APP 下载」板块走官网本站 downloads 文件夹（2026-11-14 起）。官网文件名统一 `downloads/pcpths-android.apk`（连字符）。每次发布新版后，需提醒用户让官网智能体同步更新官网 downloads 文件夹里的 APK。
+- **版本校对机制（自动更新检测，约定）**：官网 index.html 的 `<head>` 内藏一行 `<meta name="app-version-code" content="N">`（N = 本 App 的 versionCode，递增整数，不显示不影响内容）。App 每次启动同步后校对：官网 N 大于本机 versionCode → 提示并从 `https://kylinle.github.io/pcpths/downloads/pcpths-android.apk` 下载新版；相等或官网缺失/更小 → 不动作。每次发布新版后需告知用户新的 versionCode，由用户转告官网智能体同步改 meta 数字 + 替换 APK。
 - **签名密钥**：`keystore/pcpths-release.jks`（密码在 `keystore.properties`，两者均已加入 .gitignore，**切勿删除/外泄**——丢失后无法再更新 App）。Java 17 的 PKCS12 密钥库不支持存储/密钥分开设密码，两者必须相同。
 - 应用图标：由 `logo/AppLogo.png`（相机图形设计稿）生成，脚本思路见图标生成历史；改 logo 后需重新生成 mipmap-*/ic_launcher*.png 全套。
-- 发布流程：改代码 → 构建 → `./gradlew :app:assembleRelease` → `gh release create vX.Y.Z app/build/outputs/apk/release/app-release.apk#pcpths-android.apk --repo KylinLe/pcpths-android`
+- 发布流程：改代码 → 构建 → `./gradlew :app:assembleRelease` → `gh release create vX.Y.Z app/build/outputs/apk/release/app-release.apk#pcpths-android.apk --repo KylinLe/pcpths-android`（发布后检查资产名，`#` 改名偶发失效需 PATCH）→ 复制 release APK 重命名为 `pcpths-android.apk` 替换项目根目录旧文件（已 gitignore，供官网 downloads 同步用）
 
 ## 与用户协作的方式（重要）
 
@@ -89,3 +90,4 @@ adb 在 `~/Library/Android/sdk/platform-tools/adb`。
 - [x] 发布：GitHub 仓库（KylinLe/pcpths-android）+ 签名 release APK v1.0.0（2026-11-13）、v1.0.1 首页居中正式版（2026-11-14）、v1.0.2 左右滑动切换正式版（2026-11-14）
 - [x] 官网「APP 下载」板块的安卓按钮：因国内 GitHub 访问问题，改为官网本站 downloads 文件夹托管 APK（2026-11-14，由官网智能体执行）
 - [ ] 应用图标已用 logo/AppLogo.png 生成；若 logo 改版，需重新生成图标并升级版本
+- [ ] App 端自动更新检测（校对官网 meta 版本号 → 下载安装官网 APK）——等官网智能体加好 meta 标签后实现，用户会提醒
