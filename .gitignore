@@ -12,3 +12,4 @@ officialwebsite/
 # 发布签名密钥：绝不入库（丢失 = 无法再更新 App）
 keystore/
 keystore.properties
+pcpths-android.apk
