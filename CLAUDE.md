@@ -6,13 +6,20 @@
 ## 发布信息
 
 - GitHub 仓库：**KylinLe/pcpths-android**（public，main 分支）
+- **测试仓库**：**KylinLe/pcpths-test**（public，GitHub Pages）——用户专属测试版下载页 https://kylinle.github.io/pcpths-test/
 - 正式版：GitHub Releases（v1.0.0 起），安装包固定名 `pcpths-android.apk`
 - 官方下载链接（永远指向最新版）：https://github.com/KylinLe/pcpths-android/releases/latest/download/pcpths-android.apk
+- **双渠道构建（2026-11-21 起）**：prod = 正式版（包名 com.pcpths.app，应用名「普中摄影社」）；beta = 测试版（包名 **com.pcpths.test**，应用名「普中摄影社·测试」）。测试版包名与正式版完全不同，可同时安装共存，测试期间不用卸载正式版。
 - **国内下载**：因国内 github.com 访问不稳，官网「APP 下载」板块走官网本站 downloads 文件夹（2026-11-14 起）。官网文件名统一 `downloads/pcpths-android.apk`（连字符）。每次发布新版后，需提醒用户让官网智能体同步更新官网 downloads 文件夹里的 APK。
 - **版本校对机制（自动更新检测，约定）**：官网 index.html 的 `<head>` 内藏一行 `<meta name="app-version-code" content="N">`（N = 本 App 的 versionCode，递增整数，不显示不影响内容）。App 每次启动同步后校对：官网 N 大于本机 versionCode → 提示并从 `https://kylinle.github.io/pcpths/downloads/pcpths-android.apk` 下载新版；相等或官网缺失/更小 → 不动作。**检查与下载全程只走官网域名，绝不走 github.com**（国内访问不稳）。每次发布新版后需告知用户新的 versionCode，由用户转告官网智能体同步改 meta 数字 + 替换 APK。
 - **签名密钥**：`keystore/pcpths-release.jks`（密码在 `keystore.properties`，两者均已加入 .gitignore，**切勿删除/外泄**——丢失后无法再更新 App）。Java 17 的 PKCS12 密钥库不支持存储/密钥分开设密码，两者必须相同。
 - 应用图标：由 `logo/AppLogo.png`（相机图形设计稿）生成，脚本思路见图标生成历史；改 logo 后需重新生成 mipmap-*/ic_launcher*.png 全套。
-- 发布流程：改代码 → 构建 → `./gradlew :app:assembleRelease` → `gh release create vX.Y.Z app/build/outputs/apk/release/app-release.apk#pcpths-android.apk --repo KylinLe/pcpths-android`（发布后检查资产名，`#` 改名偶发失效需 PATCH）→ 复制 release APK 重命名为 `pcpths-android.apk` 替换项目根目录旧文件（已 gitignore，供官网 downloads 同步用）→ **每次发布必须提醒用户**：把新 versionCode 和根目录新 APK 交给官网智能体，同步更新官网 meta 数字 + 替换官网 downloads 里的 APK（用户要求记下的习惯）
+- **开发与发布流程（2026-11-21 起规范，用户确认制）**：
+  1. 开发 → 模拟器自测（`:app:assembleProdDebug` 装模拟器验证功能 + 截图确认）
+  2. 构建测试版 release：`./gradlew :app:assembleBetaRelease` → `app/build/outputs/apk/beta/release/app-beta-release.apk`
+  3. 上传测试仓库 KylinLe/pcpths-test：替换仓库根目录 `pcpths-android.apk` + 更新 `index.html` 里的版本号 → push（GitHub Pages 自动生效）
+  4. 把测试链接 https://kylinle.github.io/pcpths-test/ 交给用户 → 用户下载安装测试（与正式版共存）
+  5. **用户确认后**才正式发布：`./gradlew :app:assembleProdRelease` → `gh release create vX.Y.Z app/build/outputs/apk/prod/release/app-prod-release.apk#pcpths-android.apk --repo KylinLe/pcpths-android`（发布后检查资产名，`#` 改名偶发失效需 PATCH）→ 复制正式版 APK 重命名为 `pcpths-android.apk` 替换项目根目录旧文件（已 gitignore，供官网 downloads 同步用）→ **每次发布必须提醒用户**：把新 versionCode 和根目录新 APK 交给官网智能体，同步更新官网 meta 数字 + 替换官网 downloads 里的 APK（用户要求记下的习惯）
 
 ## 与用户协作的方式（重要）
 
@@ -76,9 +83,10 @@ app/src/main/java/com/pcpths/app/
 
 ```bash
 export JAVA_HOME="$PWD/tooling/jdk-17.0.21+9/Contents/Home"
-tooling/gradle-8.12.1/bin/gradle :app:assembleDebug        # 出 APK：app/build/outputs/apk/debug/app-debug.apk
-tooling/gradle-8.12.1/bin/gradle :app:assembleRelease      # 正式版（签名见「发布信息」）
-tooling/gradle-8.12.1/bin/gradle :app:testDebugUnitTest   # 跑解析测试
+./gradlew :app:assembleProdRelease    # 正式版（com.pcpths.app，签名见「发布信息」）
+./gradlew :app:assembleBetaRelease    # 测试版（com.pcpths.test，与正式版共存）
+./gradlew :app:assembleProdDebug      # 模拟器自测用 debug 包
+./gradlew :app:testProdDebugUnitTest  # 跑解析测试
 ```
 
 仓库已附 Gradle Wrapper（`./gradlew`，构建说明见 README）。
@@ -93,3 +101,4 @@ adb 在 `~/Library/Android/sdk/platform-tools/adb`。
 - [x] 官网「APP 下载」板块的安卓按钮：因国内 GitHub 访问问题，改为官网本站 downloads 文件夹托管 APK（2026-11-14，由官网智能体执行）
 - [ ] 应用图标已用 logo/AppLogo.png 生成；若 logo 改版，需重新生成图标并升级版本
 - [x] App 端自动更新检测：同步后校对官网 meta 版本号（versionCode 整数比较）→ 大于本机则弹窗（每会话一次）→ OkHttp 下载官网 APK 到 filesDir/update/ → FileProvider 交给系统安装器。需 REQUEST_INSTALL_PACKAGES 权限（已加）；首次更新会走一次系统「允许安装未知应用」授权页。下载失败走 snackbar 提示。
+- [x] 规范测试流程：专属测试仓库 KylinLe/pcpths-test（GitHub Pages 下载页）+ 双包名构建（2026-11-21）：开发→自测→出测试版 release 上传测试页→用户确认→才发正式版并替换根目录 APK

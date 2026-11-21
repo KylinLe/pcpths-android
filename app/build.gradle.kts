@@ -36,6 +36,21 @@ android {
         versionName = "1.0.3"
     }
 
+    // 双渠道（2026-11-21 起）：
+    // prod = 正式版 com.pcpths.app（应用名「普中摄影社」）
+    // beta = 测试版 com.pcpths.test（应用名「普中摄影社·测试」）——包名完全不同，与正式版共存，测试期间不用卸载正式版
+    flavorDimensions += "channel"
+    productFlavors {
+        create("prod") {
+            dimension = "channel"
+            applicationId = "com.pcpths.app"
+        }
+        create("beta") {
+            dimension = "channel"
+            applicationId = "com.pcpths.test"
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
