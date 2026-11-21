@@ -6,7 +6,7 @@
 ## 发布信息
 
 - GitHub 仓库：**KylinLe/pcpths-android**（public，main 分支）
-- **测试仓库**：**KylinLe/pcpths-test**（public，GitHub Pages）——用户专属测试版下载页 https://kylinle.github.io/pcpths-test/
+- **测试仓库**：**KylinLe/pcpths-test**（public，GitHub Pages）——用户专属测试版下载页 https://kylinle.github.io/pcpths-test/。测试页本地文件在项目内 `test-site/` 文件夹（独立 git 仓库，已加入主仓库 .gitignore；每次更新：改 index.html 版本号 + 替换 pcpths-android.apk → 在 test-site 内 commit/push）
 - 正式版：GitHub Releases（v1.0.0 起），安装包固定名 `pcpths-android.apk`
 - 官方下载链接（永远指向最新版）：https://github.com/KylinLe/pcpths-android/releases/latest/download/pcpths-android.apk
 - **双渠道构建（2026-11-21 起）**：prod = 正式版（包名 com.pcpths.app，应用名「普中摄影社」）；beta = 测试版（包名 **com.pcpths.test**，应用名「普中摄影社·测试」）。测试版包名与正式版完全不同，可同时安装共存，测试期间不用卸载正式版。
